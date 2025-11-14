@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -730,54 +731,67 @@
       document.getElementById('wikiFrame').src = wikiUrl;
     }
 
-    // Haritayı seçilen tipe göre güncelle
-    function updateMap(type) {
-      clearMarkers();
+  function updateMap(type) {
+  clearMarkers();
 
-      let bounds = [];
+  let bounds = [];
 
-      if(type === 'manuel') {
-        manuelCountries.forEach(country => {
-          const marker = L.marker([country.lat, country.lng]).addTo(map);
-          marker.bindPopup(country.name);
-          marker.on('click', () => {
-            showWikiPage(country.name);
-          });
-          markers.push(marker);
-          bounds.push([country.lat, country.lng]);
-        });
-      } else if(type === 'osmanli') {
-        osmanliCountries.forEach(country => {
-          const icon = country.osmanli ? osmanliGreenIcon : osmanliRedIcon;
-          const marker = L.marker([country.lat, country.lng], {icon}).addTo(map);
-          marker.bindPopup(`<b>${country.name}</b><br>Osmanlı Bağı: ${country.osmanli ? "Evet" : "Hayır"}`);
-          marker.on('click', () => {
-            showWikiPage(country.name);
-          });
-          markers.push(marker);
-          bounds.push([country.lat, country.lng]);
-        });
-      } else if(type === 'selcuklu') {
-        selcukluCountries.forEach(country => {
-          const icon = country.selcuklu ? selcukluBlueIcon : selcukluRedIcon;
-          const marker = L.marker([country.lat, country.lng], {icon}).addTo(map);
-          marker.bindPopup(`<b>${country.name}</b><br>Selçuklu Bağı: ${country.selcuklu ? "Evet" : "Hayır"}`);
-          marker.on('click', () => {
-            showWikiPage(country.name);
-          });
-          markers.push(marker);
-          bounds.push([country.lat, country.lng]);
-        });
-      }
+  if(type === 'manuel') {
+    manuelCountries.forEach(country => {
+      const marker = L.marker([country.lat, country.lng]).addTo(map);
+      marker.bindPopup(country.name);
+      marker.on('click', () => {
+        showWikiPage(country.name);
+      });
+      markers.push(marker);
+      bounds.push([country.lat, country.lng]);
+    });
+  } else if(type === 'osmanli') {
+    osmanliCountries.forEach(country => {
+      const icon = country.osmanli ? osmanliGreenIcon : osmanliRedIcon;
+      const marker = L.marker([country.lat, country.lng], {icon}).addTo(map);
+      marker.bindPopup(`<b>${country.name}</b><br>Osmanlı Bağı: ${country.osmanli ? "Evet" : "Hayır"}`);
+      marker.on('click', () => {
+        showWikiPage(country.name);
+      });
+      markers.push(marker);
+      bounds.push([country.lat, country.lng]);
+    });
+  } else if(type === 'selcuklu') {
+    selcukluCountries.forEach(country => {
+      const icon = country.selcuklu ? selcukluBlueIcon : selcukluRedIcon;
+      const marker = L.marker([country.lat, country.lng], {icon}).addTo(map);
+      marker.bindPopup(`<b>${country.name}</b><br>Selçuklu Bağı: ${country.selcuklu ? "Evet" : "Hayır"}`);
+      marker.on('click', () => {
+        showWikiPage(country.name);
+      });
+      markers.push(marker);
+      bounds.push([country.lat, country.lng]);
+    });
+  }
 
-      // Harita sınırlarını ayarla (eğer marker varsa)
-      if(bounds.length > 0) {
-        const latLngBounds = L.latLngBounds(bounds);
-        map.fitBounds(latLngBounds.pad(0.3));
-      }
+  if(type === 'manuel' && bounds.length > 0) {
+    // Sadece manuel tipte fitBounds uygula
+    const latLngBounds = L.latLngBounds(bounds);
+    map.fitBounds(latLngBounds.pad(0.3));
+
+    // Zoom sınırı
+    let minZoom = 3;
+    if(type === 'osmanli') minZoom = 3;
+    else if(type === 'selcuklu') minZoom = 3;
+
+    if(map.getZoom() < minZoom) {
+      map.setZoom(minZoom);
+    }
+  } else {
+    // Osmanlı veya Selçuklu tiplerinde Türkiye merkez ve sabit zoom 4
+    map.setView([38.9637, 35.2433], 4);
+  }
+
+
 
       // İlk açılışta sağdaki iframe ana sayfa gösteriyor
-      document.getElementById('wikiFrame').src = "https://tr.wikipedia.org/wiki/Vikipedi:Ana_Sayfa";
+      document.getElementById('wikiFrame').src = "https://tr.wikipedia.org/wiki/%C3%9Clkeler_listesi";
     }
 
     // İlk harita manuel olarak yükleniyor
