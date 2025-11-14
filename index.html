@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+    <meta charset="UTF-8">
+    <title>Ulkeler-Wikipedia Entegrasyonu</title>
+    
+
+  </head>
+    
+  <body>
+  <!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Ülkeler ve Wikipedia Entegrasyonlu</title>
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    crossorigin=""
+  />
+  <style>
+    html, body {
+      margin: 0; padding: 0; height: 100vh; width: 100vw; overflow: hidden;
+      font-family: Arial, sans-serif;
+    }
+    body {
+      display: flex;
+      flex-direction: row;
+    }
+    #controls {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      z-index: 1100;
+      background: white;
+      padding: 8px 12px;
+      border-radius: 6px;
+      box-shadow: 0 1px 5px rgba(0,0,0,0.3);
+      font-size: 16px;
+    }
+    #map, #wiki {
+      height: 100vh;
+      width: 50vw;
+      box-sizing: border-box;
+    }
+    #map {
+      border-right: 2px solid #ccc;
+    }
+    #wiki iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      display: block;
+    }
+    .leaflet-container {
+      background: #eee;
+    }
+.leaflet-control-zoom {
+  top: 50px !important;
+  left: 10px !important;
+  position: absolute !important;
+  z-index: 1100;
+}
+
+
+    /* Responsive ayarlar */
+    @media (max-width: 768px) {
+      body {
+        flex-direction: column;
+      }
+      #controls {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        box-sizing: border-box;
+        border-radius: 0;
+        padding: 10px 15px;
+        text-align: center;
+        font-size: 14px;
+        z-index: 1200;
+      }
+      #map, #wiki {
+        width: 100vw;
+        height: 50vh;
+      }
+      #map {
+        border-right: none;
+        border-bottom: 2px solid #ccc;
+      }
+    }
+
+    @media (max-width: 400px) {
+      #controls {
+        font-size: 13px;
+        padding: 8px 10px;
+      }
+      #map, #wiki {
+        height: 45vh;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="controls">
+    (Hazırlayan: M. Enes SEVGİ)
+    <label for="mapSelector">Harita Seçin: </label>
+    <select id="mapSelector">
+      <option value="manuel">Ülkeler Haritası</option>
+      <option value="osmanli">Geçmişte Osmanlı Bağı Olan Ülkeler</option>
+      <option value="selcuklu">Geçmişte Selçuklu Bağı Olan Ülkeler</option>
+    </select>
+  </div>
+
+  <div id="map"></div>
+  <div id="wiki">
+    <iframe
+      id="wikiFrame"
+      src="https://tr.wikipedia.org/wiki/Vikipedi:Ana_Sayfa"
+      title="Wikipedia"
+      sandbox="allow-same-origin allow-scripts allow-popups"
+    ></iframe>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <script>
+     const manuelCountries = [
+    {"name":"Afganistan","lat":33.93911,"lng":67.709953},
+  {"name":"Arnavutluk","lat":41.153332,"lng":20.168331},
+  {"name":"Cezayir","lat":28.033886,"lng":1.659626},
+  {"name":"Amerika Birleşik Devletleri","lat":37.09024,"lng":-95.712891},
+  {"name":"Andorra","lat":42.546245,"lng":1.601554},
+  {"name":"Angola","lat":-11.202692,"lng":17.873887},
+  {"name":"Antigua ve Barbuda","lat":17.060816,"lng":-61.796428},
+  {"name":"Arjantin","lat":-38.416097,"lng":-63.616672},
+  {"name":"Avustralya","lat":-25.274398,"lng":133.775136},
+  {"name":"Avusturya","lat":47.516231,"lng":14.550072},
+  {"name":"Azerbaycan","lat":40.143105,"lng":47.576927},
+  {"name":"Bahreyn","lat":26.0667,"lng":50.5577},
+  {"name":"Bangladeş","lat":23.684994,"lng":90.356331},
+  {"name":"Barbados","lat":13.193887,"lng":-59.543198},
+  {"name":"Belarus","lat":53.709807,"lng":27.953389},
+  {"name":"Belçika","lat":50.503887,"lng":4.469936},
+  {"name":"Belize","lat":17.189877,"lng":-88.49765},
+  {"name":"Benin","lat":9.30769,"lng":2.315834},
+  {"name":"Butan","lat":27.514162,"lng":90.433601},
+  {"name":"Bolivya","lat":-16.290154,"lng":-63.588653},
+  {"name":"Bosna-Hersek","lat":43.915886,"lng":17.679076},
+  {"name":"Botsvana","lat":-22.328474,"lng":24.684866},
+  {"name":"Brezilya","lat":-14.235004,"lng":-51.92528},
+  {"name":"Brunei","lat":4.535277,"lng":114.727669},
+  {"name":"Bulgaristan","lat":42.733883,"lng":25.48583},
+  {"name":"Burkina Faso","lat":12.238333,"lng":-1.561593},
+  {"name":"Burundi","lat":-3.373056,"lng":29.918886},
+  {"name":"Yeşil Burun Adaları","lat":16.002082,"lng":-24.013197},
+  {"name":"Kamboçya","lat":12.565679,"lng":104.990963},
+  {"name":"Kamerun","lat":7.369722,"lng":12.354722},
+  {"name":"Kanada","lat":56.130366,"lng":-106.346771},
+  {"name":"Çad","lat":15.454166,"lng":18.732207},
+  {"name":"Şili","lat":-35.675147,"lng":-71.542969},
+  {"name":"Çin","lat":35.86166,"lng":104.195397},
+  {"name":"Kolombiya","lat":4.570868,"lng":-74.297333},
+  {"name":"Kosta Rika","lat":9.748917,"lng":-83.753428},
+  {"name":"Hırvatistan","lat":45.1,"lng":15.2},
+  {"name":"Küba","lat":21.521757,"lng":-77.781167},
+  {"name":"Kıbrıs","lat":35.126413,"lng":33.429859},
+  {"name":"Kuzey Kıbrıs Türk Cumhuriyeti","lat":35.3249,"lng":33.4299},
+  {"name":"Kosova","lat":42.602636,"lng":20.902977},
+  {"name":"Kuzey Makedonya","lat":41.608635,"lng":21.745275},
+  {"name":"Çekya","lat":49.817492,"lng":15.472962},
+  {"name":"Danimarka","lat":56.26392,"lng":9.501785},
+  {"name":"Dominika","lat":15.414999,"lng":-61.370976},
+  {"name":"Dominik Cumhuriyeti","lat":18.735693,"lng":-70.162651},
+  {"name":"Ekvador","lat":-1.831239,"lng":-78.183406},
+  {"name":"Mısır","lat":26.820553,"lng":30.802498},
+  {"name":"El Salvador","lat":13.794185,"lng":-88.89653},
+  {"name":"Estonya","lat":58.595272,"lng":25.013607},
+  {"name":"Esvatini","lat":-26.522503,"lng":31.465866},
+  {"name":"Etiyopya","lat":9.145,"lng":40.489673},
+  {"name":"Fiji","lat":-17.713371,"lng":178.065032},
+  {"name":"Finlandiya","lat":61.92411,"lng":25.748151},
+  {"name":"Fransa","lat":46.227638,"lng":2.213749},
+  {"name":"Gabon","lat":-0.803689,"lng":11.609444},
+  {"name":"Gambiya","lat":13.443182,"lng":-15.310139},
+  {"name":"Gürcistan","lat":42.315407,"lng":43.356892},
+  {"name":"Almanya","lat":51.165691,"lng":10.451526},
+  {"name":"Gana","lat":7.946527,"lng":-1.023194},
+  {"name":"Yunanistan","lat":39.074208,"lng":21.824312},
+  {"name":"Grenada","lat":12.262776,"lng":-61.604171},
+  {"name":"Guatemala","lat":15.783471,"lng":-90.230759},
+  {"name":"Gine","lat":9.945587,"lng":-9.696645},
+  {"name":"Guyana","lat":4.860416,"lng":-58.93018},
+  {"name":"Haiti","lat":18.971187,"lng":-72.285215},
+  {"name":"Honduras","lat":15.199999,"lng":-86.241905},
+  {"name":"Macaristan","lat":47.162494,"lng":19.503304},
+  {"name":"İzlanda","lat":64.963051,"lng":-19.020835},
+  {"name":"Hindistan","lat":20.593684,"lng":78.96288},
+  {"name":"Endonezya","lat":-0.789275,"lng":113.921327},
+  {"name":"İran","lat":32.427908,"lng":53.688046},
+  {"name":"Irak","lat":33.223191,"lng":43.679291},
+  {"name":"İrlanda","lat":53.41291,"lng":-8.24389},
+  {"name":"İsrail","lat":31.046051,"lng":34.851612},
+  {"name":"İtalya","lat":41.87194,"lng":12.56738},
+  {"name":"Jamaika","lat":18.109581,"lng":-77.297508},
+  {"name":"Japonya","lat":36.204824,"lng":138.252924},
+  {"name":"Ürdün","lat":30.585164,"lng":36.238414},
+  {"name":"Kazakistan","lat":48.019573,"lng":66.923684},
+  {"name":"Kenya","lat":-0.023559,"lng":37.906193},
+  {"name":"Kuveyt","lat":29.31166,"lng":47.481766},
+  {"name":"Kırgızistan","lat":41.20438,"lng":74.766098},
+  {"name":"Laos","lat":19.85627,"lng":102.495496},
+  {"name":"Letonya","lat":56.879635,"lng":24.603189},
+  {"name":"Lübnan","lat":33.854721,"lng":35.862285},
+  {"name":"Lesotho","lat":-29.609988,"lng":28.233608},
+  {"name":"Liberya","lat":6.428055,"lng":-9.429499},
+  {"name":"Libya","lat":26.3351,"lng":17.228331},
+  {"name":"Lihtenştayn","lat":47.166,"lng":9.555373},
+  {"name":"Litvanya","lat":55.169438,"lng":23.881275},
+  {"name":"Lüksemburg","lat":49.815273,"lng":6.129583},
+  {"name":"Madagaskar","lat":-18.766947,"lng":46.869107},
+  {"name":"Malavi","lat":-13.254308,"lng":34.301525},
+  {"name":"Malezya","lat":4.210484,"lng":101.975766},
+  {"name":"Maldivler","lat":3.202778,"lng":73.22068},
+  {"name":"Mali","lat":17.570692,"lng":-3.996166},
+  {"name":"Malta","lat":35.937496,"lng":14.375416},
+  {"name":"Marshall Adaları","lat":7.131474,"lng":171.184478},
+  {"name":"Moritanya","lat":21.00789,"lng":-10.940835},
+  {"name":"Mauritius","lat":-20.348404,"lng":57.552152},
+  {"name":"Meksika","lat":23.634501,"lng":-102.552784},
+  {"name":"Mikronezya","lat":7.425554,"lng":150.550812},
+  {"name":"Moldova","lat":47.411631,"lng":28.369885},
+  {"name":"Monako","lat":43.750298,"lng":7.412841},
+  {"name":"Moğolistan","lat":46.862496,"lng":103.846656},
+  {"name":"Karadağ","lat":42.708678,"lng":19.37439},
+  {"name":"Fas","lat":31.791702,"lng":-7.09262},
+  {"name":"Mozambik","lat":-18.665695,"lng":35.529562},
+  {"name":"Myanmar","lat":21.913965,"lng":95.956223},
+  {"name":"Namibya","lat":-22.95764,"lng":18.49041},
+  {"name":"Nepal","lat":28.394857,"lng":84.124008},
+  {"name":"Hollanda","lat":52.132633,"lng":5.291266},
+  {"name":"Yeni Zelanda","lat":-40.900557,"lng":174.885971},
+  {"name":"Nikaragua","lat":12.865416,"lng":-85.207229},
+  {"name":"Nijer","lat":17.607789,"lng":8.081666},
+  {"name":"Nijerya","lat":9.081999,"lng":8.675277},
+  {"name":"Norveç","lat":60.472024,"lng":8.468946},
+  {"name":"Umman","lat":21.512583,"lng":55.923255},
+  {"name":"Pakistan","lat":30.375321,"lng":69.345116},
+  {"name":"Palau","lat":7.51498,"lng":134.58252},
+  {"name":"Filistin","lat":31.952162,"lng":35.233154},
+  {"name":"Panama","lat":8.537981,"lng":-80.782127},
+  {"name":"Papua Yeni Gine","lat":-6.314993,"lng":143.95555},
+  {"name":"Paraguay","lat":-23.442503,"lng":-58.443832},
+  {"name":"Peru","lat":-9.189967,"lng":-75.015152},
+  {"name":"Filipinler","lat":12.879721,"lng":121.774017},
+  {"name":"Polonya","lat":51.919438,"lng":19.145136},
+  {"name":"Portekiz","lat":39.399872,"lng":-8.224454},
+  {"name":"Katar","lat":25.354826,"lng":51.183884},
+  {"name":"Romanya","lat":45.943161,"lng":24.96676},
+  {"name":"Rusya","lat":61.52401,"lng":105.318756},
+  {"name":"Ruanda","lat":-1.940278,"lng":29.873888},
+  {"name":"Saint Kitts ve Nevis","lat":17.357822,"lng":-62.782998},
+  {"name":"Saint Lucia","lat":13.909444,"lng":-60.978893},
+  {"name":"Saint Vincent ve Grenadinler","lat":12.984305,"lng":-61.287228},
+  {"name":"Samoa","lat":-13.759029,"lng":-172.104629},
+  {"name":"San Marino","lat":43.933271,"lng":12.457777},
+  {"name":"Sao Tome ve Principe","lat":0.18636,"lng":6.613081},
+  {"name":"Suudi Arabistan","lat":23.885942,"lng":45.079162},
+  {"name":"Senegal","lat":14.497401,"lng":-14.452362},
+  {"name":"Sırbistan","lat":44.016521,"lng":21.005859},
+  {"name":"Seyşeller","lat":-4.679574,"lng":55.491977},
+  {"name":"Sierra Leone","lat":8.460555,"lng":-11.779889},
+  {"name":"Singapur","lat":1.352083,"lng":103.819836},
+  {"name":"Slovakya","lat":48.669026,"lng":19.699024},
+  {"name":"Slovenya","lat":46.151241,"lng":14.995463},
+  {"name":"Solomon Adaları","lat":-9.64571,"lng":160.156194},
+  {"name":"Somali","lat":5.152149,"lng":46.199616},
+  {"name":"Güney Afrika","lat":-30.559482,"lng":22.937506},
+  {"name":"Güney Kore","lat":35.907757,"lng":127.766922},
+  {"name":"İspanya","lat":40.463667,"lng":-3.74922},
+  {"name":"Sri Lanka","lat":7.873054,"lng":80.771797},
+  {"name":"Sudan","lat":12.862807,"lng":30.217636},
+  {"name":"Surinam","lat":3.919305,"lng":-56.027783},
+  {"name":"İsveç","lat":60.128161,"lng":18.643501},
+  {"name":"İsviçre","lat":46.818188,"lng":8.227512},
+  {"name":"Suriye","lat":34.802075,"lng":38.996815},
+  {"name":"Tacikistan","lat":38.861034,"lng":71.276093},
+  {"name":"Tanzanya","lat":-6.369028,"lng":34.888822},
+  {"name":"Tayland","lat":15.870032,"lng":100.992541},
+  {"name":"Togo","lat":8.619543,"lng":0.824782},
+  {"name":"Tonga","lat":-21.178986,"lng":-175.198242},
+  {"name":"Trinidad ve Tobago","lat":10.691803,"lng":-61.222503},
+  {"name":"Tunus","lat":33.886917,"lng":9.537499},
+  {"name":"Türkiye","lat":38.963745,"lng":35.243322},
+  {"name":"Türkmenistan","lat":38.969719,"lng":59.556278},
+  {"name":"Tuvalu","lat":-7.109535,"lng":179.194091},
+  {"name":"Uganda","lat":1.373333,"lng":32.290275},
+  {"name":"Ukrayna","lat":48.379433,"lng":31.16558},
+  {"name":"Birleşik Arap Emirlikleri","lat":23.424076,"lng":53.847818},
+  {"name":"Birleşik Krallık","lat":55.378051,"lng":-3.435973},
+  {"name":"Uruguay","lat":-32.522779,"lng":-55.765835},
+  {"name":"Özbekistan","lat":41.377491,"lng":64.585262},
+  {"name":"Vanuatu","lat":-15.376706,"lng":166.959158},
+  {"name":"Venezuela","lat":6.42375,"lng":-66.58973},
+  {"name":"Vietnam","lat":14.058324,"lng":108.277199},
+  {"name":"Yemen","lat":15.552727,"lng":48.516388},
+  {"name":"Zambiya","lat":-13.133897,"lng":27.849332},
+  {"name":"Zimbabve","lat":-19.015438,"lng":29.154857}
+    ];
+
+    const osmanliCountries = [
+      {"name":"Afganistan","lat":33.93911,"lng":67.709953,"osmanli":false},
+      {"name":"Arnavutluk","lat":41.153332,"lng":20.168331,"osmanli":true},
+      {"name":"Cezayir","lat":28.033886,"lng":1.659626,"osmanli":true},
+      {"name":"Amerika Birleşik Devletleri","lat":37.09024,"lng":-95.712891,"osmanli":false},
+      {"name":"Andorra","lat":42.546245,"lng":1.601554,"osmanli":false},
+      {"name":"Angola","lat":-11.202692,"lng":17.873887,"osmanli":false},
+      {"name":"Antigua ve Barbuda","lat":17.060816,"lng":-61.796428,"osmanli":false},
+      {"name":"Arjantin","lat":-38.416097,"lng":-63.616672,"osmanli":false},
+      {"name":"Avustralya","lat":-25.274398,"lng":133.775136,"osmanli":false},
+      {"name":"Avusturya","lat":47.516231,"lng":14.550072,"osmanli":false},
+      {"name":"Azerbaycan","lat":40.143105,"lng":47.576927,"osmanli":true},
+      {"name":"Bahreyn","lat":26.0667,"lng":50.5577,"osmanli":false},
+      {"name":"Bangladeş","lat":23.684994,"lng":90.356331,"osmanli":false},
+      {"name":"Barbados","lat":13.193887,"lng":-59.543198,"osmanli":false},
+      {"name":"Belarus","lat":53.709807,"lng":27.953389,"osmanli":false},
+      {"name":"Belçika","lat":50.503887,"lng":4.469936,"osmanli":false},
+      {"name":"Belize","lat":17.189877,"lng":-88.49765,"osmanli":false},
+      {"name":"Benin","lat":9.30769,"lng":2.315834,"osmanli":false},
+      {"name":"Butan","lat":27.514162,"lng":90.433601,"osmanli":false},
+      {"name":"Bolivya","lat":-16.290154,"lng":-63.588653,"osmanli":false},
+      {"name":"Bosna-Hersek","lat":43.915886,"lng":17.679076,"osmanli":true},
+      {"name":"Botsvana","lat":-22.328474,"lng":24.684866,"osmanli":false},
+      {"name":"Brezilya","lat":-14.235004,"lng":-51.92528,"osmanli":false},
+      {"name":"Brunei","lat":4.535277,"lng":114.727669,"osmanli":false},
+      {"name":"Bulgaristan","lat":42.733883,"lng":25.48583,"osmanli":true},
+      {"name":"Burkina Faso","lat":12.238333,"lng":-1.561593,"osmanli":false},
+      {"name":"Burundi","lat":-3.373056,"lng":29.918886,"osmanli":false},
+      {"name":"Yeşil Burun Adaları","lat":16.002082,"lng":-24.013197,"osmanli":false},
+      {"name":"Kamboçya","lat":12.565679,"lng":104.990963,"osmanli":false},
+      {"name":"Kamerun","lat":7.369722,"lng":12.354722,"osmanli":false},
+      {"name":"Kanada","lat":56.130366,"lng":-106.346771,"osmanli":false},
+      {"name":"Çad","lat":15.454166,"lng":18.732207,"osmanli":false},
+      {"name":"Şili","lat":-35.675147,"lng":-71.542969,"osmanli":false},
+      {"name":"Çin","lat":35.86166,"lng":104.195397,"osmanli":false},
+      {"name":"Kolombiya","lat":4.570868,"lng":-74.297333,"osmanli":false},
+      {"name":"Kosta Rika","lat":9.748917,"lng":-83.753428,"osmanli":false},
+      {"name":"Hırvatistan","lat":45.1,"lng":15.2,"osmanli":false},
+      {"name":"Küba","lat":21.521757,"lng":-77.781167,"osmanli":false},
+      {"name":"Kıbrıs","lat":35.126413,"lng":33.429859,"osmanli":true},
+      {"name":"Kuzey Kıbrıs Türk Cumhuriyeti","lat":35.3249,"lng":33.4299,"osmanli":true},
+      {"name":"Kosova","lat":42.602636,"lng":20.902977,"osmanli":true},
+      {"name":"Kuzey Makedonya","lat":41.608635,"lng":21.745275,"osmanli":true},
+      {"name":"Çekya","lat":49.817492,"lng":15.472962,"osmanli":false},
+      {"name":"Danimarka","lat":56.26392,"lng":9.501785,"osmanli":false},
+      {"name":"Dominika","lat":15.414999,"lng":-61.370976,"osmanli":false},
+      {"name":"Dominik Cumhuriyeti","lat":18.735693,"lng":-70.162651,"osmanli":false},
+      {"name":"Ekvador","lat":-1.831239,"lng":-78.183406,"osmanli":false},
+      {"name":"Mısır","lat":26.820553,"lng":30.802498,"osmanli":true},
+      {"name":"El Salvador","lat":13.794185,"lng":-88.89653,"osmanli":false},
+      {"name":"Estonya","lat":58.595272,"lng":25.013607,"osmanli":false},
+      {"name":"Esvatini","lat":-26.522503,"lng":31.465866,"osmanli":false},
+      {"name":"Etiyopya","lat":9.145,"lng":40.489673,"osmanli":false},
+      {"name":"Fiji","lat":-17.713371,"lng":178.065032,"osmanli":false},
+      {"name":"Finlandiya","lat":61.92411,"lng":25.748151,"osmanli":false},
+      {"name":"Fransa","lat":46.227638,"lng":2.213749,"osmanli":false},
+      {"name":"Gabon","lat":-0.803689,"lng":11.609444,"osmanli":false},
+      {"name":"Gambiya","lat":13.443182,"lng":-15.310139,"osmanli":false},
+      {"name":"Gürcistan","lat":42.315407,"lng":43.356892,"osmanli":true},
+      {"name":"Almanya","lat":51.165691,"lng":10.451526,"osmanli":false},
+      {"name":"Gana","lat":7.946527,"lng":-1.023194,"osmanli":false},
+      {"name":"Yunanistan","lat":39.074208,"lng":21.824312,"osmanli":true},
+      {"name":"Grenada","lat":12.262776,"lng":-61.604171,"osmanli":false},
+      {"name":"Guatemala","lat":15.783471,"lng":-90.230759,"osmanli":false},
+      {"name":"Gine","lat":9.945587,"lng":-9.696645,"osmanli":false},
+      {"name":"Guyana","lat":4.860416,"lng":-58.93018,"osmanli":false},
+      {"name":"Haiti","lat":18.971187,"lng":-72.285215,"osmanli":false},
+      {"name":"Honduras","lat":15.199999,"lng":-86.241905,"osmanli":false},
+      {"name":"Macaristan","lat":47.162494,"lng":19.503304,"osmanli":true},
+      {"name":"İzlanda","lat":64.963051,"lng":-19.020835,"osmanli":false},
+      {"name":"Hindistan","lat":20.593684,"lng":78.96288,"osmanli":false},
+      {"name":"Endonezya","lat":-0.789275,"lng":113.921327,"osmanli":false},
+      {"name":"İran","lat":32.427908,"lng":53.688046,"osmanli":true},
+      {"name":"Irak","lat":33.223191,"lng":43.679291,"osmanli":true},
+      {"name":"İrlanda","lat":53.41291,"lng":-8.24389,"osmanli":false},
+      {"name":"İsrail","lat":31.046051,"lng":34.851612,"osmanli":true},
+      {"name":"İtalya","lat":41.87194,"lng":12.56738,"osmanli":false},
+      {"name":"Jamaika","lat":18.109581,"lng":-77.297508,"osmanli":false},
+      {"name":"Japonya","lat":36.204824,"lng":138.252924,"osmanli":false},
+      {"name":"Ürdün","lat":30.585164,"lng":36.238414,"osmanli":true},
+      {"name":"Kazakistan","lat":48.019573,"lng":66.923684,"osmanli":false},
+      {"name":"Kenya","lat":-0.023559,"lng":37.906193,"osmanli":false},
+      {"name":"Kuveyt","lat":29.31166,"lng":47.481766,"osmanli":true},
+      {"name":"Kırgızistan","lat":41.20438,"lng":74.766098,"osmanli":false},
+      {"name":"Laos","lat":19.85627,"lng":102.495496,"osmanli":false},
+      {"name":"Letonya","lat":56.879635,"lng":24.603189,"osmanli":false},
+      {"name":"Lübnan","lat":33.854721,"lng":35.862285,"osmanli":true},
+      {"name":"Lesotho","lat":-29.609988,"lng":28.233608,"osmanli":false},
+      {"name":"Liberya","lat":6.428055,"lng":-9.429499,"osmanli":false},
+      {"name":"Libya","lat":26.3351,"lng":17.228331,"osmanli":true},
+      {"name":"Lihtenştayn","lat":47.166,"lng":9.555373,"osmanli":false},
+      {"name":"Litvanya","lat":55.169438,"lng":23.881275,"osmanli":false},
+      {"name":"Lüksemburg","lat":49.815273,"lng":6.129583,"osmanli":false},
+      {"name":"Madagaskar","lat":-18.766947,"lng":46.869107,"osmanli":false},
+      {"name":"Malavi","lat":-13.254308,"lng":34.301525,"osmanli":false},
+      {"name":"Malezya","lat":4.210484,"lng":101.975766,"osmanli":false},
+      {"name":"Maldivler","lat":3.202778,"lng":73.22068,"osmanli":false},
+      {"name":"Mali","lat":17.570692,"lng":-3.996166,"osmanli":false},
+      {"name":"Malta","lat":35.937496,"lng":14.375416,"osmanli":false},
+      {"name":"Marshall Adaları","lat":7.131474,"lng":171.184478,"osmanli":false},
+      {"name":"Moritanya","lat":21.00789,"lng":-10.940835,"osmanli":false},
+      {"name":"Mauritius","lat":-20.348404,"lng":57.552152,"osmanli":false},
+      {"name":"Meksika","lat":23.634501,"lng":-102.552784,"osmanli":false},
+      {"name":"Mikronezya","lat":7.425554,"lng":150.550812,"osmanli":false},
+      {"name":"Moldova","lat":47.411631,"lng":28.369885,"osmanli":true},
+      {"name":"Monako","lat":43.750298,"lng":7.412841,"osmanli":false},
+      {"name":"Moğolistan","lat":46.862496,"lng":103.846656,"osmanli":false},
+      {"name":"Karadağ","lat":42.708678,"lng":19.37439,"osmanli":true},
+      {"name":"Fas","lat":31.791702,"lng":-7.09262,"osmanli":true},
+      {"name":"Mozambik","lat":-18.665695,"lng":35.529562,"osmanli":false},
+      {"name":"Myanmar","lat":21.913965,"lng":95.956223,"osmanli":false},
+      {"name":"Namibya","lat":-22.95764,"lng":18.49041,"osmanli":false},
+      {"name":"Nepal","lat":28.394857,"lng":84.124008,"osmanli":false},
+      {"name":"Hollanda","lat":52.132633,"lng":5.291266,"osmanli":false},
+      {"name":"Yeni Zelanda","lat":-40.900557,"lng":174.885971,"osmanli":false},
+      {"name":"Nikaragua","lat":12.865416,"lng":-85.207229,"osmanli":false},
+      {"name":"Nijer","lat":17.607789,"lng":8.081666,"osmanli":false},
+      {"name":"Nijerya","lat":9.081999,"lng":8.675277,"osmanli":false},
+      {"name":"Norveç","lat":60.472024,"lng":8.468946,"osmanli":false},
+      {"name":"Umman","lat":21.512583,"lng":55.923255,"osmanli":false},
+      {"name":"Pakistan","lat":30.375321,"lng":69.345116,"osmanli":false},
+      {"name":"Palau","lat":7.51498,"lng":134.58252,"osmanli":false},
+      {"name":"Filistin","lat":31.952162,"lng":35.233154,"osmanli":true},
+      {"name":"Panama","lat":8.537981,"lng":-80.782127,"osmanli":false},
+      {"name":"Papua Yeni Gine","lat":-6.314993,"lng":143.95555,"osmanli":false},
+      {"name":"Paraguay","lat":-23.442503,"lng":-58.443832,"osmanli":false},
+      {"name":"Peru","lat":-9.189967,"lng":-75.015152,"osmanli":false},
+      {"name":"Filipinler","lat":12.879721,"lng":121.774017,"osmanli":false},
+      {"name":"Polonya","lat":51.919438,"lng":19.145136,"osmanli":false},
+      {"name":"Portekiz","lat":39.399872,"lng":-8.224454,"osmanli":false},
+      {"name":"Katar","lat":25.354826,"lng":51.183884,"osmanli":true},
+      {"name":"Romanya","lat":45.943161,"lng":24.96676,"osmanli":true},
+      {"name":"Rusya","lat":61.52401,"lng":105.318756,"osmanli":false},
+      {"name":"Ruanda","lat":-1.940278,"lng":29.873888,"osmanli":false},
+      {"name":"Saint Kitts ve Nevis","lat":17.357822,"lng":-62.782998,"osmanli":false},
+      {"name":"Saint Lucia","lat":13.909444,"lng":-60.978893,"osmanli":false},
+      {"name":"Saint Vincent ve Grenadinler","lat":12.984305,"lng":-61.287228,"osmanli":false},
+      {"name":"Samoa","lat":-13.759029,"lng":-172.104629,"osmanli":false},
+      {"name":"San Marino","lat":43.933271,"lng":12.457777,"osmanli":false},
+      {"name":"Sao Tome ve Principe","lat":0.18636,"lng":6.613081,"osmanli":false},
+      {"name":"Suudi Arabistan","lat":23.885942,"lng":45.079162,"osmanli":true},
+      {"name":"Senegal","lat":14.497401,"lng":-14.452362,"osmanli":false},
+      {"name":"Sırbistan","lat":44.016521,"lng":21.005859,"osmanli":true},
+      {"name":"Seyşeller","lat":-4.679574,"lng":55.491977,"osmanli":false},
+      {"name":"Sierra Leone","lat":8.460555,"lng":-11.779889,"osmanli":false},
+      {"name":"Singapur","lat":1.352083,"lng":103.819836,"osmanli":false},
+      {"name":"Slovakya","lat":48.669026,"lng":19.699024,"osmanli":false},
+      {"name":"Slovenya","lat":46.151241,"lng":14.995463,"osmanli":false},
+      {"name":"Solomon Adaları","lat":-9.64571,"lng":160.156194,"osmanli":false},
+      {"name":"Somali","lat":5.152149,"lng":46.199616,"osmanli":false},
+      {"name":"Güney Afrika","lat":-30.559482,"lng":22.937506,"osmanli":false},
+      {"name":"Güney Kore","lat":35.907757,"lng":127.766922,"osmanli":false},
+      {"name":"İspanya","lat":40.463667,"lng":-3.74922,"osmanli":false},
+      {"name":"Sri Lanka","lat":7.873054,"lng":80.771797,"osmanli":false},
+      {"name":"Sudan","lat":12.862807,"lng":30.217636,"osmanli":true},
+      {"name":"Surinam","lat":3.919305,"lng":-56.027783,"osmanli":false},
+      {"name":"İsveç","lat":60.128161,"lng":18.643501,"osmanli":false},
+      {"name":"İsviçre","lat":46.818188,"lng":8.227512,"osmanli":false},
+      {"name":"Suriye","lat":34.802075,"lng":38.996815,"osmanli":true},
+      {"name":"Tacikistan","lat":38.861034,"lng":71.276093,"osmanli":false},
+      {"name":"Tanzanya","lat":-6.369028,"lng":34.888822,"osmanli":false},
+      {"name":"Tayland","lat":15.870032,"lng":100.992541,"osmanli":false},
+      {"name":"Togo","lat":8.619543,"lng":0.824782,"osmanli":false},
+      {"name":"Tonga","lat":-21.178986,"lng":-175.198242,"osmanli":false},
+      {"name":"Trinidad ve Tobago","lat":10.691803,"lng":-61.222503,"osmanli":false},
+      {"name":"Tunus","lat":33.886917,"lng":9.537499,"osmanli":true},
+      {"name":"Türkiye","lat":38.963745,"lng":35.243322,"osmanli":true},
+      {"name":"Türkmenistan","lat":38.969719,"lng":59.556278,"osmanli":false},
+      {"name":"Tuvalu","lat":-7.109535,"lng":179.194091,"osmanli":false},
+      {"name":"Uganda","lat":1.373333,"lng":32.290275,"osmanli":false},
+      {"name":"Ukrayna","lat":48.379433,"lng":31.16558,"osmanli":true},
+      {"name":"Birleşik Arap Emirlikleri","lat":23.424076,"lng":53.847818,"osmanli":false},
+      {"name":"Birleşik Krallık","lat":55.378051,"lng":-3.435973,"osmanli":false},
+      {"name":"Uruguay","lat":-32.522779,"lng":-55.765835,"osmanli":false},
+      {"name":"Özbekistan","lat":41.377491,"lng":64.585262,"osmanli":false},
+      {"name":"Vanuatu","lat":-15.376706,"lng":166.959158,"osmanli":false},
+      {"name":"Venezuela","lat":6.42375,"lng":-66.58973,"osmanli":false},
+      {"name":"Vietnam","lat":14.058324,"lng":108.277199,"osmanli":false},
+      {"name":"Yemen","lat":15.552727,"lng":48.516388,"osmanli":true},
+      {"name":"Zambiya","lat":-13.133897,"lng":27.849332,"osmanli":false},
+      {"name":"Zimbabve","lat":-19.015438,"lng":29.154857,"osmanli":false}
+    ];
+
+    const selcukluCountries = [
+       {"name":"Afganistan","lat":33.93911,"lng":67.709953,"selcuklu":true},
+      {"name":"Arnavutluk","lat":41.153332,"lng":20.168331,"selcuklu":false},
+      {"name":"Cezayir","lat":28.033886,"lng":1.659626,"selcuklu":false},
+      {"name":"Amerika Birleşik Devletleri","lat":37.09024,"lng":-95.712891,"selcuklu":false},
+      {"name":"Andorra","lat":42.546245,"lng":1.601554,"selcuklu":false},
+      {"name":"Angola","lat":-11.202692,"lng":17.873887,"selcuklu":false},
+      {"name":"Antigua ve Barbuda","lat":17.060816,"lng":-61.796428,"selcuklu":false},
+      {"name":"Arjantin","lat":-38.416097,"lng":-63.616672,"selcuklu":false},
+      {"name":"Avustralya","lat":-25.274398,"lng":133.775136,"selcuklu":false},
+      {"name":"Avusturya","lat":47.516231,"lng":14.550072,"selcuklu":false},
+      {"name":"Azerbaycan","lat":40.143105,"lng":47.576927,"selcuklu":true},
+      {"name":"Bahreyn","lat":26.0667,"lng":50.5577,"selcuklu":false},
+      {"name":"Bangladeş","lat":23.684994,"lng":90.356331,"selcuklu":false},
+      {"name":"Barbados","lat":13.193887,"lng":-59.543198,"selcuklu":false},
+      {"name":"Belarus","lat":53.709807,"lng":27.953389,"selcuklu":false},
+      {"name":"Belçika","lat":50.503887,"lng":4.469936,"selcuklu":false},
+      {"name":"Belize","lat":17.189877,"lng":-88.49765,"selcuklu":false},
+      {"name":"Benin","lat":9.30769,"lng":2.315834,"selcuklu":false},
+      {"name":"Butan","lat":27.514162,"lng":90.433601,"selcuklu":false},
+      {"name":"Bolivya","lat":-16.290154,"lng":-63.588653,"selcuklu":false},
+      {"name":"Bosna-Hersek","lat":43.915886,"lng":17.679076,"selcuklu":false},
+      {"name":"Botsvana","lat":-22.328474,"lng":24.684866,"selcuklu":false},
+      {"name":"Brezilya","lat":-14.235004,"lng":-51.92528,"selcuklu":false},
+      {"name":"Brunei","lat":4.535277,"lng":114.727669,"selcuklu":false},
+      {"name":"Bulgaristan","lat":42.733883,"lng":25.48583,"selcuklu":false},
+      {"name":"Burkina Faso","lat":12.238333,"lng":-1.561593,"selcuklu":false},
+      {"name":"Burundi","lat":-3.373056,"lng":29.918886,"selcuklu":false},
+      {"name":"Yeşil Burun Adaları","lat":16.002082,"lng":-24.013197,"selcuklu":false},
+      {"name":"Kamboçya","lat":12.565679,"lng":104.990963,"selcuklu":false},
+      {"name":"Kamerun","lat":7.369722,"lng":12.354722,"selcuklu":false},
+      {"name":"Kanada","lat":56.130366,"lng":-106.346771,"selcuklu":false},
+      {"name":"Çad","lat":15.454166,"lng":18.732207,"selcuklu":false},
+      {"name":"Şili","lat":-35.675147,"lng":-71.542969,"selcuklu":false},
+      {"name":"Çin","lat":35.86166,"lng":104.195397,"selcuklu":false},
+      {"name":"Kolombiya","lat":4.570868,"lng":-74.297333,"selcuklu":false},
+      {"name":"Kosta Rika","lat":9.748917,"lng":-83.753428,"selcuklu":false},
+      {"name":"Hırvatistan","lat":45.1,"lng":15.2,"selcuklu":false},
+      {"name":"Küba","lat":21.521757,"lng":-77.781167,"selcuklu":false},
+      {"name":"Kıbrıs","lat":35.126413,"lng":33.429859,"selcuklu":false},
+      {"name":"Kuzey Kıbrıs Türk Cumhuriyeti","lat":35.3249,"lng":33.4299,"selcuklu":false},
+      {"name":"Kosova","lat":42.602636,"lng":20.902977,"selcuklu":false},
+      {"name":"Kuzey Makedonya","lat":41.608635,"lng":21.745275,"selcuklu":false},
+      {"name":"Çekya","lat":49.817492,"lng":15.472962,"selcuklu":false},
+      {"name":"Danimarka","lat":56.26392,"lng":9.501785,"selcuklu":false},
+      {"name":"Dominika","lat":15.414999,"lng":-61.370976,"selcuklu":false},
+      {"name":"Dominik Cumhuriyeti","lat":18.735693,"lng":-70.162651,"selcuklu":false},
+      {"name":"Ekvador","lat":-1.831239,"lng":-78.183406,"selcuklu":false},
+      {"name":"Mısır","lat":26.820553,"lng":30.802498,"selcuklu":false},
+      {"name":"El Salvador","lat":13.794185,"lng":-88.89653,"selcuklu":false},
+      {"name":"Estonya","lat":58.595272,"lng":25.013607,"selcuklu":false},
+      {"name":"Esvatini","lat":-26.522503,"lng":31.465866,"selcuklu":false},
+      {"name":"Etiyopya","lat":9.145,"lng":40.489673,"selcuklu":false},
+      {"name":"Fiji","lat":-17.713371,"lng":178.065032,"selcuklu":false},
+      {"name":"Finlandiya","lat":61.92411,"lng":25.748151,"selcuklu":false},
+      {"name":"Fransa","lat":46.227638,"lng":2.213749,"selcuklu":false},
+      {"name":"Gabon","lat":-0.803689,"lng":11.609444,"selcuklu":false},
+      {"name":"Gambiya","lat":13.443182,"lng":-15.310139,"selcuklu":false},
+      {"name":"Gürcistan","lat":42.315407,"lng":43.356892,"selcuklu":true},
+      {"name":"Almanya","lat":51.165691,"lng":10.451526,"selcuklu":false},
+      {"name":"Gana","lat":7.946527,"lng":-1.023194,"selcuklu":false},
+      {"name":"Yunanistan","lat":39.074208,"lng":21.824312,"selcuklu":false},
+      {"name":"Grenada","lat":12.262776,"lng":-61.604171,"selcuklu":false},
+      {"name":"Guatemala","lat":15.783471,"lng":-90.230759,"selcuklu":false},
+      {"name":"Gine","lat":9.945587,"lng":-9.696645,"selcuklu":false},
+      {"name":"Guyana","lat":4.860416,"lng":-58.93018,"selcuklu":false},
+      {"name":"Haiti","lat":18.971187,"lng":-72.285215,"selcuklu":false},
+      {"name":"Honduras","lat":15.199999,"lng":-86.241905,"selcuklu":false},
+      {"name":"Macaristan","lat":47.162494,"lng":19.503304,"selcuklu":false},
+      {"name":"İzlanda","lat":64.963051,"lng":-19.020835,"selcuklu":false},
+      {"name":"Hindistan","lat":20.593684,"lng":78.96288,"selcuklu":false},
+      {"name":"Endonezya","lat":-0.789275,"lng":113.921327,"selcuklu":false},
+      {"name":"İran","lat":32.427908,"lng":53.688046,"selcuklu":true},
+      {"name":"Irak","lat":33.223191,"lng":43.679291,"selcuklu":true},
+      {"name":"İrlanda","lat":53.41291,"lng":-8.24389,"selcuklu":false},
+      {"name":"İsrail","lat":31.046051,"lng":34.851612,"selcuklu":false},
+      {"name":"İtalya","lat":41.87194,"lng":12.56738,"selcuklu":false},
+      {"name":"Jamaika","lat":18.109581,"lng":-77.297508,"selcuklu":false},
+      {"name":"Japonya","lat":36.204824,"lng":138.252924,"selcuklu":false},
+      {"name":"Ürdün","lat":30.585164,"lng":36.238414,"selcuklu":true},
+      {"name":"Kazakistan","lat":48.019573,"lng":66.923684,"selcuklu":false},
+      {"name":"Kenya","lat":-0.023559,"lng":37.906193,"selcuklu":false},
+      {"name":"Kuveyt","lat":29.31166,"lng":47.481766,"selcuklu":false},
+      {"name":"Kırgızistan","lat":41.20438,"lng":74.766098,"selcuklu":false},
+      {"name":"Laos","lat":19.85627,"lng":102.495496,"selcuklu":false},
+      {"name":"Letonya","lat":56.879635,"lng":24.603189,"selcuklu":false},
+      {"name":"Lübnan","lat":33.854721,"lng":35.862285,"selcuklu":true},
+      {"name":"Lesotho","lat":-29.609988,"lng":28.233608,"selcuklu":false},
+      {"name":"Liberya","lat":6.428055,"lng":-9.429499,"selcuklu":false},
+      {"name":"Libya","lat":26.3351,"lng":17.228331,"selcuklu":false},
+      {"name":"Lihtenştayn","lat":47.166,"lng":9.555373,"selcuklu":false},
+      {"name":"Litvanya","lat":55.169438,"lng":23.881275,"selcuklu":false},
+      {"name":"Lüksemburg","lat":49.815273,"lng":6.129583,"selcuklu":false},
+      {"name":"Madagaskar","lat":-18.766947,"lng":46.869107,"selcuklu":false},
+      {"name":"Malavi","lat":-13.254308,"lng":34.301525,"selcuklu":false},
+      {"name":"Malezya","lat":4.210484,"lng":101.975766,"selcuklu":false},
+      {"name":"Maldivler","lat":3.202778,"lng":73.22068,"selcuklu":false},
+      {"name":"Mali","lat":17.570692,"lng":-3.996166,"selcuklu":false},
+      {"name":"Malta","lat":35.937496,"lng":14.375416,"selcuklu":false},
+      {"name":"Marshall Adaları","lat":7.131474,"lng":171.184478,"selcuklu":false},
+      {"name":"Moritanya","lat":21.00789,"lng":-10.940835,"selcuklu":false},
+      {"name":"Mauritius","lat":-20.348404,"lng":57.552152,"selcuklu":false},
+      {"name":"Meksika","lat":23.634501,"lng":-102.552784,"selcuklu":false},
+      {"name":"Mikronezya","lat":7.425554,"lng":150.550812,"selcuklu":false},
+      {"name":"Moldova","lat":47.411631,"lng":28.369885,"selcuklu":false},
+      {"name":"Monako","lat":43.750298,"lng":7.412841,"selcuklu":false},
+      {"name":"Moğolistan","lat":46.862496,"lng":103.846656,"selcuklu":false},
+      {"name":"Karadağ","lat":42.708678,"lng":19.37439,"selcuklu":false},
+      {"name":"Fas","lat":31.791702,"lng":-7.09262,"selcuklu":false},
+      {"name":"Mozambik","lat":-18.665695,"lng":35.529562,"selcuklu":false},
+      {"name":"Myanmar","lat":21.913965,"lng":95.956223,"selcuklu":false},
+      {"name":"Namibya","lat":-22.95764,"lng":18.49041,"selcuklu":false},
+      {"name":"Nepal","lat":28.394857,"lng":84.124008,"selcuklu":false},
+      {"name":"Hollanda","lat":52.132633,"lng":5.291266,"selcuklu":false},
+      {"name":"Yeni Zelanda","lat":-40.900557,"lng":174.885971,"selcuklu":false},
+      {"name":"Nikaragua","lat":12.865416,"lng":-85.207229,"selcuklu":false},
+      {"name":"Nijer","lat":17.607789,"lng":8.081666,"selcuklu":false},
+      {"name":"Nijerya","lat":9.081999,"lng":8.675277,"selcuklu":false},
+      {"name":"Norveç","lat":60.472024,"lng":8.468946,"selcuklu":false},
+      {"name":"Umman","lat":21.512583,"lng":55.923255,"selcuklu":false},
+      {"name":"Pakistan","lat":30.375321,"lng":69.345116,"selcuklu":true},
+      {"name":"Palau","lat":7.51498,"lng":134.58252,"selcuklu":false},
+      {"name":"Filistin","lat":31.952162,"lng":35.233154,"selcuklu":true},
+      {"name":"Panama","lat":8.537981,"lng":-80.782127,"selcuklu":false},
+      {"name":"Papua Yeni Gine","lat":-6.314993,"lng":143.95555,"selcuklu":false},
+      {"name":"Paraguay","lat":-23.442503,"lng":-58.443832,"selcuklu":false},
+      {"name":"Peru","lat":-9.189967,"lng":-75.015152,"selcuklu":false},
+      {"name":"Filipinler","lat":12.879721,"lng":121.774017,"selcuklu":false},
+      {"name":"Polonya","lat":51.919438,"lng":19.145136,"selcuklu":false},
+      {"name":"Portekiz","lat":39.399872,"lng":-8.224454,"selcuklu":false},
+      {"name":"Katar","lat":25.354826,"lng":51.183884,"selcuklu":false},
+      {"name":"Romanya","lat":45.943161,"lng":24.96676,"selcuklu":false},
+      {"name":"Rusya","lat":61.52401,"lng":105.318756,"selcuklu":false},
+      {"name":"Ruanda","lat":-1.940278,"lng":29.873888,"selcuklu":false},
+      {"name":"Saint Kitts ve Nevis","lat":17.357822,"lng":-62.782998,"selcuklu":false},
+      {"name":"Saint Lucia","lat":13.909444,"lng":-60.978893,"selcuklu":false},
+      {"name":"Saint Vincent ve Grenadinler","lat":12.984305,"lng":-61.287228,"selcuklu":false},
+      {"name":"Samoa","lat":-13.759029,"lng":-172.104629,"selcuklu":false},
+      {"name":"San Marino","lat":43.933271,"lng":12.457777,"selcuklu":false},
+      {"name":"Sao Tome ve Principe","lat":0.18636,"lng":6.613081,"selcuklu":false},
+      {"name":"Suudi Arabistan","lat":23.885942,"lng":45.079162,"selcuklu":false},
+      {"name":"Senegal","lat":14.497401,"lng":-14.452362,"selcuklu":false},
+      {"name":"Sırbistan","lat":44.016521,"lng":21.005859,"selcuklu":false},
+      {"name":"Seyşeller","lat":-4.679574,"lng":55.491977,"selcuklu":false},
+      {"name":"Sierra Leone","lat":8.460555,"lng":-11.779889,"selcuklu":false},
+      {"name":"Singapur","lat":1.352083,"lng":103.819836,"selcuklu":false},
+      {"name":"Slovakya","lat":48.669026,"lng":19.699024,"selcuklu":false},
+      {"name":"Slovenya","lat":46.151241,"lng":14.995463,"selcuklu":false},
+      {"name":"Solomon Adaları","lat":-9.64571,"lng":160.156194,"selcuklu":false},
+      {"name":"Somali","lat":5.152149,"lng":46.199616,"selcuklu":false},
+      {"name":"Güney Afrika","lat":-30.559482,"lng":22.937506,"selcuklu":false},
+      {"name":"Güney Kore","lat":35.907757,"lng":127.766922,"selcuklu":false},
+      {"name":"İspanya","lat":40.463667,"lng":-3.74922,"selcuklu":false},
+      {"name":"Sri Lanka","lat":7.873054,"lng":80.771797,"selcuklu":false},
+      {"name":"Sudan","lat":12.862807,"lng":30.217636,"selcuklu":false},
+      {"name":"Surinam","lat":3.919305,"lng":-56.027783,"selcuklu":false},
+      {"name":"İsveç","lat":60.128161,"lng":18.643501,"selcuklu":false},
+      {"name":"İsviçre","lat":46.818188,"lng":8.227512,"selcuklu":false},
+      {"name":"Suriye","lat":34.802075,"lng":38.996815,"selcuklu":true},
+      {"name":"Tacikistan","lat":38.861034,"lng":71.276093,"selcuklu":true},
+      {"name":"Tanzanya","lat":-6.369028,"lng":34.888822,"selcuklu":false},
+      {"name":"Tayland","lat":15.870032,"lng":100.992541,"selcuklu":false},
+      {"name":"Togo","lat":8.619543,"lng":0.824782,"selcuklu":false},
+      {"name":"Tonga","lat":-21.178986,"lng":-175.198242,"selcuklu":false},
+      {"name":"Trinidad ve Tobago","lat":10.691803,"lng":-61.222503,"selcuklu":false},
+      {"name":"Tunus","lat":33.886917,"lng":9.537499,"selcuklu":false},
+      {"name":"Türkiye","lat":38.963745,"lng":35.243322,"selcuklu":true},
+      {"name":"Türkmenistan","lat":38.969719,"lng":59.556278,"selcuklu":true},
+      {"name":"Tuvalu","lat":-7.109535,"lng":179.194091,"selcuklu":false},
+      {"name":"Uganda","lat":1.373333,"lng":32.290275,"selcuklu":false},
+      {"name":"Ukrayna","lat":48.379433,"lng":31.16558,"selcuklu":false},
+      {"name":"Birleşik Arap Emirlikleri","lat":23.424076,"lng":53.847818,"selcuklu":false},
+      {"name":"Birleşik Krallık","lat":55.378051,"lng":-3.435973,"selcuklu":false},
+      {"name":"Uruguay","lat":-32.522779,"lng":-55.765835,"selcuklu":false},
+      {"name":"Özbekistan","lat":41.377491,"lng":64.585262,"selcuklu":true},
+      {"name":"Vanuatu","lat":-15.376706,"lng":166.959158,"selcuklu":false},
+      {"name":"Venezuela","lat":6.42375,"lng":-66.58973,"selcuklu":false},
+      {"name":"Vietnam","lat":14.058324,"lng":108.277199,"selcuklu":false},
+      {"name":"Yemen","lat":15.552727,"lng":48.516388,"selcuklu":false},
+      {"name":"Zambiya","lat":-13.133897,"lng":27.849332,"selcuklu":false},
+      {"name":"Zimbabve","lat":-19.015438,"lng":29.154857,"selcuklu":false}
+    ];
+
+    // Haritayı başlat
+    const map = L.map('map').setView([20, 0], 2);
+
+    // OpenStreetMap katmanı
+    const tileLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> katkıcıları'
+    }).addTo(map);
+
+    // Marker ikonları
+    const osmanliGreenIcon = new L.Icon({
+      iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png',
+      shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+      iconSize: [25, 41],
+      iconAnchor: [12, 41],
+      popupAnchor: [1, -34],
+      shadowSize: [41, 41]
+    });
+
+    const osmanliRedIcon = new L.Icon({
+      iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
+      shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+      iconSize: [25, 41],
+      iconAnchor: [12, 41],
+      popupAnchor: [1, -34],
+      shadowSize: [41, 41]
+    });
+
+    const selcukluBlueIcon = new L.Icon({
+      iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png',
+      shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+      iconSize: [25, 41],
+      iconAnchor: [12, 41],
+      popupAnchor: [1, -34],
+      shadowSize: [41, 41]
+    });
+
+    const selcukluRedIcon = osmanliRedIcon; // Aynı kırmızı ikon kullanılabilir
+
+    // Markerları tutan dizi
+    let markers = [];
+
+    // Haritayı temizle
+    function clearMarkers() {
+      markers.forEach(m => map.removeLayer(m));
+      markers = [];
+    }
+
+    // Wikipedia sayfasını sağdaki iframe'de göster
+    function showWikiPage(countryName) {
+      const wikiPage = countryName.replace(/ /g, '_');
+      const wikiUrl = `https://tr.wikipedia.org/wiki/${encodeURIComponent(wikiPage)}`;
+      document.getElementById('wikiFrame').src = wikiUrl;
+    }
+
+    // Haritayı seçilen tipe göre güncelle
+    function updateMap(type) {
+      clearMarkers();
+
+      let bounds = [];
+
+      if(type === 'manuel') {
+        manuelCountries.forEach(country => {
+          const marker = L.marker([country.lat, country.lng]).addTo(map);
+          marker.bindPopup(country.name);
+          marker.on('click', () => {
+            showWikiPage(country.name);
+          });
+          markers.push(marker);
+          bounds.push([country.lat, country.lng]);
+        });
+      } else if(type === 'osmanli') {
+        osmanliCountries.forEach(country => {
+          const icon = country.osmanli ? osmanliGreenIcon : osmanliRedIcon;
+          const marker = L.marker([country.lat, country.lng], {icon}).addTo(map);
+          marker.bindPopup(`<b>${country.name}</b><br>Osmanlı Bağı: ${country.osmanli ? "Evet" : "Hayır"}`);
+          marker.on('click', () => {
+            showWikiPage(country.name);
+          });
+          markers.push(marker);
+          bounds.push([country.lat, country.lng]);
+        });
+      } else if(type === 'selcuklu') {
+        selcukluCountries.forEach(country => {
+          const icon = country.selcuklu ? selcukluBlueIcon : selcukluRedIcon;
+          const marker = L.marker([country.lat, country.lng], {icon}).addTo(map);
+          marker.bindPopup(`<b>${country.name}</b><br>Selçuklu Bağı: ${country.selcuklu ? "Evet" : "Hayır"}`);
+          marker.on('click', () => {
+            showWikiPage(country.name);
+          });
+          markers.push(marker);
+          bounds.push([country.lat, country.lng]);
+        });
+      }
+
+      // Harita sınırlarını ayarla (eğer marker varsa)
+      if(bounds.length > 0) {
+        const latLngBounds = L.latLngBounds(bounds);
+        map.fitBounds(latLngBounds.pad(0.3));
+      }
+
+      // İlk açılışta sağdaki iframe ana sayfa gösteriyor
+      document.getElementById('wikiFrame').src = "https://tr.wikipedia.org/wiki/Vikipedi:Ana_Sayfa";
+    }
+
+    // İlk harita manuel olarak yükleniyor
+    updateMap('manuel');
+     map.setView([38.9637, 35.2433], 4);
+
+    // Seçim değiştiğinde haritayı güncelle
+    document.getElementById('mapSelector').addEventListener('change', e => {
+      updateMap(e.target.value);
+    });
+  </script>
+</body>
+</html>
+    
+  </body>
+  
+</html>
